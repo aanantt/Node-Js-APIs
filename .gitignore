@@ -1,0 +1,4 @@
+post/
+profile/
+node_modules/
+middleware/cloudinary.js
