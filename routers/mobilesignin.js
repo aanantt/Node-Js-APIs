@@ -4,6 +4,7 @@ const redis = require("redis");
 const bcrypt = require('bcrypt');
 const { v1: uuidv1, } = require('uuid');
 const client = redis.createClient();
+const db = require('../database')
 
 client.on('connect', function () {
     console.log('Redis Connected!');
@@ -36,7 +37,7 @@ router.post('/otp/verify', (req, res) => {
                 else {
                     if (res0.length == 0) {
                         const sql = `INSERT INTO User VALUES ('${token}', '', '', '', '', null, now(), "profile/image.jpeg",0, ${phone});`;
-                        db.query(sql1, (err, res1) => {
+                        db.query(sql, (err, res1) => {
                             if (err) throw err;
                             else {
 
