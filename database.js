@@ -1,16 +1,25 @@
 const mysql = require('mysql')
 
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'password',
-    multipleStatements: true,
-    database: 'nodejs'
+    host: 'workwithapi.cqq63wcmk2cn.ap-south-1.rds.amazonaws.com',
+    user: 'workwithapi',
+    password: 'workwithapi',
+    // multipleStatements: true,
+    database: 'workwithapi',
+    port:3306
 })
 
 db.connect((err) => {
     console.log("Database connected")
 });
+// const db = mysql.createConnection({
+//     host: 'workwithapi.cqq63wcmk2cn.ap-south-1.rds.amazonaws.com',
+//     user: 'workwithapi',
+//     password: 'workwithapi',
+//     // multipleStatements: true,
+//     // database: 'workwithapi',
+//     port:3306
+// })
 // const { Client } = require('pg');
 
 // const db = new Client({

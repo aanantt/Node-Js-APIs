@@ -15,137 +15,25 @@ const isAuthenticated = require('../middleware/authentication_middleware');
 const check_if_exist = require('../middleware/unique_username_middleware');
 const db = require('../database')
 const salt = bcrypt.genSaltSync(10);
-const storage = require('../middleware/cloudinary')
 
 
-var upload = multer({ storage: storage })
+// var upload = multer({ storage: storage })
 
+const UserController = require("../controllers/user_controllers.js")
+router.post('/login', UserController.LogIn)
 
-router.get('/', (req, res1) => {
-    const sql = "select username,id from User";
-    db.query(sql, (err, res) => {
-        if (err) throw err
-        else {
-            res1.status(200).json({
-                total: res.length,
-                data: res.map(r => {
-                    return {
-                        author: {
-                            username: r.username,
-                            email: r.email,
-                            profile: "http://localhost:3000/" + r.profilepic
-                        },
-                    }
-                })
-            });
-        }
-    })
-})
+router.post('/signup', check_if_exist, UserController.SignUp)
 
-router.post('/login', (req, res) => {
-    const username = req.body.username;
-    console.log(req.body);
-    const sql = `select password,token from User where username = '${username}'`;
-    db.query(sql, (err, rows) => {
-        if (err) throw err;
-        else {
-            if (bcrypt.compareSync(req.body.password, rows[0].password)) {
-                res.status(200).json({ token: rows[0].token })
-            }
-            else {
-                res.status(403).send('Wrong Password');
-            }
+router.get('/verify/:token', UserController.VerifyToken)
 
-        }
-    })
-})
+router.put('/upload/profilepic', isAuthenticated, UserController.UploadProfile)
+// router.put('/upload/profilepic', isAuthenticated, upload.single('avatar'), UserController.UploadProfile)
 
-router.post('/signup', check_if_exist, (req, response) => {
-    const token = uuidv1();
-    const hash = bcrypt.hashSync(req.body.password, salt);
-    const sql = `INSERT INTO User VALUES ('${token}', '${req.body.name}', '${req.body.email}', '${req.body.username}', '${hash}',null, now(), "profile/image.jpeg",0);`;
-    db.query(sql, (err, res) => {
-        if (err) throw err;
-        else {
-            const verifytoken = res.insertId + "/" + req.body.username + "/" + token;
-            const verifyhash = crypto.encrypt(verifytoken);
-            console.log(res.insertId);
-            response.status(201).json({
-                token: token,
-                hash: verifyhash,
-            });
-            email(req.body.email, verifyhash);
-        }
-    })
-})
+router.post('/change/password', isAuthenticated, UserController.ChangePassword)
 
-router.get('/verify/:token', (req, res) => {
-    const values = crypto.decrypt(req.params.token).split('/');
-    const sql = `update User set verified = 1 where id = ${values[0]}`
-    db.query(sql, (err, rows) => {
-        if (err) throw err;
-        else {
-            console.log(res);
-            res.status(200).send('Account Verified!!! :D');
-        }
-    })
-})
+router.post('/change/username', [isAuthenticated, check_if_exist], UserController.ChangeUsername
 
-router.put('/upload/profilepic', isAuthenticated, upload.single('avatar'), (req, res) => {
-    const sql = `update User set profilepic = '${req.file.path}' where username = '${req.user.username}'`;
-    console.log(req.file.path);
-    console.log(req.user)
-    db.query(sql, (err, rows) => {
-        if (err) throw err;
-        else {
-            res.status(200).send(rows);
-        }
-    })
-
-})
-
-router.post('/change/password', isAuthenticated, (req, res) => {
-    const old_password = req.body.old_password;
-    const new_password = req.body.new_password;
-    const hash = bcrypt.hashSync(new_password, salt);
-    const old_token = req.user.token;
-    const new_token = uuidv1();
-    const sql = `select password from User where token = '${old_token}'`;
-    const update = `update User set password = '${hash}', token = '${new_token}' where token = '${old_token}'`;
-    db.query(sql, (err, rows) => {
-        if (err) throw err;
-        else {
-            if (bcrypt.compareSync(old_password, rows[0].password)) {
-                // if password are same update BOTH token and password 
-                // so that other logged in device can't access anything.
-                db.query(update, (err, rows1) => {
-                    if (err) throw err;
-                    else {
-                        res.status(200).json({
-                            token: new_token
-                        })
-                    }
-                })
-            }
-        }
-    })
-
-
-
-})
-
-router.post('/change/username', [isAuthenticated,check_if_exist], (req, res) => {
-    const username = req.body.username;
-    console.log(req.user);
-    const sql = `update User set username = '${username}' where id = ${req.user.id}`;
-    db.query(sql, (err, rows) => {
-        if (err) throw err;
-        else {
-            res.status(200).send('Username Updated Successfully');
-        }
-    })
-
-})
+)
 module.exports = {
     router, db
 }
